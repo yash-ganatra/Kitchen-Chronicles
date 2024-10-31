@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Practice recipes</title>
+    <style>
+        #recipe_table td {
+            border: 2px solid white;
+        }
+
+        .card {
+            overflow: hidden;
+            /* Ensure the image doesn't overflow the card */
+        }
+
+        .card-img-top {
+            transition: transform 0.5s ease;
+            /* Smooth transition for the zoom effect */
+        }
+
+        .card:hover .card-img-top {
+            transform: scale(1.1);
+            /* Scale the image up on hover */
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
+
+<body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM"
+        crossorigin="anonymous"></script>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light fixed-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="Landing_recipe.html">Kitchen Chronicles</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 filter_menu">
+                    <div class="form-group">
+                        <li>
+                            <select name="" id="cuisine" class="form-select" style='border-color:white'>
+                                <option value="All">Cuisine</option>
+                            </select>
+                        </li>
+                    </div>
+
+                    <div class="form-group">
+                        <li>
+                            <select name="" id="mealType" class="form-select" style='border-color:white'>
+                                <option value="All">Meal Type</option>
+                            </select>
+                        </li>
+                    </div>
+
+                    <div class="form-group">
+                        <li>
+                            <select name="" id="difficulty" class="form-select" style='border-color:white'>
+                                <option value="All">Difficulty</option>
+                                <option value="Easy">Easy</option>
+                                <option value="Medium">Medium</option>
+                            </select>
+                        </li>
+                    </div>
+                </ul>
+                <input class="form-control me-2 filter_menu" id="searchid" style="width:200px" type="search"
+                    placeholder="Search" aria-label="Search">
+                <button class="btn btn-outline-success filter_menu" onclick="PopulateTableWithCards()">Search</button>
+                <button class="btn btn-success" onclick="GotoMain()" id="back_btn" style="display:none">Back</button>
+
+            </div>
+        </div>
+    </nav>
+
+    <div>
+        <button onclick="fetchRecipe()">Fetch</button>
+    </div>
+    <div>
+        <table id="recipe_table" class="table"></table>
+    </div>
+    <script>
+        function getUniqueMealType() {
+            let uniqueMeal = [];
+            for (let i = 0; i < _getAPI.length; i++) {
+                for (let j = 0; j < _getAPI[i].mealType.length; j++) {
+                    if (!uniqueMeal.includes(_getAPI[i].mealType[j])) {
+                        uniqueMeal.push(_getAPI[i].mealType[j]);
+                    }
+                }
+            }
+            return uniqueMeal;
+        }
+
+        function createMealTypeDD() {
+            let uniqueMeal = getUniqueMealType();
+            let mealTypeId = document.getElementById("mealType");
+            for (let i = 0; i < uniqueMeal.length; i++) {
+                const option = document.createElement('option');
+                option.value = uniqueMeal[i];
+                option.text = uniqueMeal[i];
+                mealTypeId.appendChild(option);
+            }
+        }
+
+        function getUniqueCuisine() {
+            let uniqueCuisine = [];
+            for (let i = 0; i < _getAPI.length; i++) {
+                if (!uniqueCuisine.includes(_getAPI[i].cuisine)) {
+                    uniqueCuisine.push(_getAPI[i].cuisine);
+                }
+            }
+            return uniqueCuisine;
+        }
+
+        function createUniqueCuisineDD() {
+            let uniqueCuisineArray = getUniqueCuisine();
+            let cuisine_id = document.getElementById("cuisine");
+            for (let i = 0; i < uniqueCuisineArray.length; i++) {
+                const option = document.createElement('option');
+                option.value = uniqueCuisineArray[i];
+                option.text = uniqueCuisineArray[i];
+                cuisine_id.appendChild(option);
+            }
+        }
+
+        let _getAPI = "";
+        function fetchRecipe() {
+            fetch("https://dummyjson.com/recipes")
+                .then(response => response.json())
+                .then(data => {
+                    _getAPI = data.recipes;
+                    PopulateTableWithCards();
+                    createMealTypeDD();
+                    createUniqueCuisineDD();
+                })
+        }
+
+        function generateTable(dataObj) {
+            let values_array = Object.values(dataObj);
+            let attribute_array = Object.keys(dataObj);
+            const tableObj = document.getElementById("recipe_table");
+            tableObj.innerHTML = '';
+            for (let i = 0; i < attribute_array.length; i++) {
+                const newRow = tableObj.insertRow();
+                const cell1 = newRow.insertCell();
+                const cell2 = newRow.insertCell();
+                cell1.innerHTML = attribute_array[i];
+                cell2.innerHTML = values_array[i];
+            }
+            const elements = document.getElementsByClassName("filter_menu");
+            for (let i = 0; i < elements.length; i++) {
+                elements[i].style.display  = 'none';
+            }
+            document.getElementById("back_btn").style.display="block";
+        }
+
+        function getFilteredRecipe() {
+            let diff_ids = [];
+            let mealType_ids = [];
+            let cuisine_ids = [];
+            let search_ids = [];
+            const difficulty = document.getElementById("difficulty").value;
+            const mealType = document.getElementById("mealType").value;
+            const cuisine = document.getElementById("cuisine").value;
+            const search = document.getElementById("searchid").value;
+            for (let i = 0; i < _getAPI.length; i++) {
+                // Difficulty filter
+                if (difficulty == _getAPI[i].difficulty || difficulty == "All") {
+                    diff_ids.push(_getAPI[i].id);
+                }
+                // Meal Type filter
+                if (mealType == "All") {
+                    mealType_ids.push(_getAPI[i].id);
+                } else {
+                    for (let j = 0; j < _getAPI[i].mealType.length; j++) {
+                        if (_getAPI[i].mealType[j] == mealType) {
+                            mealType_ids.push(_getAPI[i].id);
+                        }
+                    }
+                }
+                // Cuisine filter
+                if (cuisine == _getAPI[i].cuisine || cuisine == "All") {
+                    cuisine_ids.push(_getAPI[i].id);
+                }
+                // Search filter
+                if (search != "") {
+                    let recipe_string = JSON.stringify(_getAPI[i]).toLowerCase();
+                    let search_string = document.getElementById("searchid").value.toLowerCase();
+                    if (recipe_string.search(search_string) != -1) {
+                        search_ids.push(_getAPI[i].id);
+                    }
+                } else {
+                    search_ids.push(_getAPI[i].id);
+                }
+            }
+            let unique_arr = [];
+            for (let i = 0; i < _getAPI.length; i++) {
+                if (diff_ids.includes(_getAPI[i].id) && mealType_ids.includes(_getAPI[i].id) && cuisine_ids.includes(_getAPI[i].id) && search_ids.includes(_getAPI[i].id)) {
+                    unique_arr.push(_getAPI[i]);
+                }
+            }
+            return unique_arr;
+        }
+
+        function recipe_info(recipe_id) {
+            for (let i = 0; i < _getAPI.length; i++) {
+                if (_getAPI[i].id == recipe_id) {
+                    generateTable(_getAPI[i]);
+                }
+            }
+        }
+
+        function PopulateTableWithCards() {
+            let recipe_toShow = _getAPI;
+            recipe_toShow = getFilteredRecipe();
+            const tableObj = document.getElementById("recipe_table");
+            tableObj.innerHTML = '';
+            let num_rows = Math.ceil(recipe_toShow.length / 3);
+
+            for (let i = 0; i < num_rows; i++) {
+                const newRow = tableObj.insertRow();
+                for (let j = 0; j < 3; j++) {
+                    if (typeof (recipe_toShow[(i * 3) + j]) == "undefined") {
+                        break;
+                    }
+
+                    const cell1 = newRow.insertCell();
+                    cell1.classList.add('p-2');
+                    cell1.classList.add('col-4'); // Add padding to cell
+
+                    const recipe = recipe_toShow[(i * 3) + j];
+
+                    cell1.innerHTML = `
+                        <div class="card" onclick="recipe_info(${recipe.id})" style="cursor: pointer; border-radius: 30px">
+                            <img src="${recipe.image}" class="card-img-top" alt="${recipe.name}" style="height: 250px; object-fit: cover; padding:20px 20px 0px 20px; border-radius: 30px;">
+                            <div class="card-body">
+                                <h5 class="card-title"> ${recipe.name}</h5>
+                                <p class="card-text">${recipe.cuisine} cuisine of ${recipe.difficulty} difficulty </p>
+                            </div>
+                        </div>`;
+                }
+            }
+        }
+
+        function GotoMain(){
+            document.location.href="recipe4.html"
+           
+
+        }
+
+        document.getElementById("difficulty").addEventListener('change', PopulateTableWithCards);
+        document.getElementById("mealType").addEventListener('change', PopulateTableWithCards);
+        document.getElementById("cuisine").addEventListener('change', PopulateTableWithCards);
+
+        setTimeout(fetchRecipe, 250);
+    </script>
+</body>
+
+</html>
